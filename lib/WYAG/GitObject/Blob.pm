@@ -14,7 +14,7 @@ has repo => (
 
 has size => (
     is => 'ro',
-    isa => 'Int',
+    isa => 'UInt',
     default => 0,
 );
 

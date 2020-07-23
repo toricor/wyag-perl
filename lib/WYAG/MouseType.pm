@@ -18,6 +18,7 @@ sub type_storage {
 use MouseX::Types
     -declare => [
         qw/
+            UInt
             GitObject
             SHA1
         /,
@@ -26,10 +27,17 @@ use MouseX::Types
 # import builtin types
 use MouseX::Types::Mouse qw/Int Str HashRef Object ArrayRef Maybe Undef/;
 
+# type definition
+subtype UInt,
+    as Int,
+    where { $_ >= 0 },
+    message { 'UInt must be >= 0' };
+
+## loose object
 subtype GitObject,
     as Object(),
     where { ref($_) =~ /\AWYAG::GitObject::(Blob|Tag|Tree|Commit)\z/mo },
-    message { "GitObject is WYAG::GitObject::(Blob|Tag|Tree|Commit). got: ". ref $_ };
+    message { "GitObject is WYAG::GitObject::(Blob|Tag|Tree|Commit). got: " . ref $_ };
 
 subtype SHA1,
     as Str(),

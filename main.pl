@@ -4,10 +4,10 @@ use warnings;
 use lib './lib';
 use feature qw/say/;
 
-use Getopt::Long::Subcommand;
 use Compress::Zlib qw/uncompress/;
 use Digest::SHA1 qw/sha1_hex/;
 use File::Spec;
+use Getopt::Long::Subcommand;
 
 use WYAG::GitObject::Commit;
 use WYAG::GitObject::Tree;
@@ -57,7 +57,7 @@ sub main {
         if ($res->{subcommand}->[0] eq 'cat-file') {
             my $repo = repo_find();
             my $sha1 = $ARGV[0]
-                or die 'git cat-file needs SHA1';
+                or die 'git cat-file needs SHA1 hash as arg';
             my $git_object = object_read($repo, $ARGV[0]);
 
             $result = WYAG::Command::CatFile->run(+{

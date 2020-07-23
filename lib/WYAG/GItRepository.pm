@@ -5,10 +5,9 @@ use warnings;
 use Mouse;
 use File::Spec;
 
-# path
 has worktree => (
     is       => 'ro',
-    isa      => 'Str',
+    isa      => 'Str', # path
     required => 1,
 );
 
