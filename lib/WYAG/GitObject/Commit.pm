@@ -8,11 +8,25 @@ with 'WYAG::GitObject::Role::Deserializable';
 
 has repo => (
     is  => 'rw',
-    isa => 'Str',
+    isa => 'WYAG::GitRepository',
+    required => 1,
+);
+
+has size => (
+    is => 'ro',
+    isa => 'Int',
+    default => 0,
+);
+
+has raw_data => (
+    is => 'rw',
+    isa => 'Defined',
     default => '',
 );
 
 sub serialize {
+    my $self = shift;
+    return $self->raw_data;
     die 'unimplemented';
 }
 

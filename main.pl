@@ -2,17 +2,18 @@ use strict;
 use warnings;
 
 use lib './lib';
-use Getopt::Long::Subcommand;
 use feature qw/say/;
+
+use Getopt::Long::Subcommand;
 use Compress::Zlib qw/uncompress/;
 use Digest::SHA1 qw/sha1_hex/;
-
-use WYAG::IO;
+use File::Spec;
 
 use WYAG::GitObject::Commit;
 use WYAG::GitObject::Tree;
 use WYAG::GitObject::Tag;
 use WYAG::GitObject::Blob;
+use WYAG::GitRepository;
 
 use WYAG::Command::CatFile;
 
@@ -54,8 +55,10 @@ sub main {
     my $result;
     if (scalar(@{$res->{subcommand}}) > 0) {
         if ($res->{subcommand}->[0] eq 'cat-file') {
-            my $file_path = WYAG::IO->build_object_path(sha1 => $ARGV[0]);
-            my $git_object = read_and_build_git_object($file_path);
+            my $repo = repo_find();
+            my $sha1 = $ARGV[0]
+                or die 'git cat-file needs SHA1';
+            my $git_object = object_read($repo, $ARGV[0]);
 
             $result = WYAG::Command::CatFile->run(+{
                 target => $git_object,
@@ -67,19 +70,77 @@ sub main {
     say $result;
 }
 
-sub read_and_build_git_object {
-    my ($file_path) = @_;
+sub repo_find {
+    my ($path) = @_;
+    $path //= '.';
 
-    my $raw = WYAG::IO->get_raw_data($file_path);
-    my $uncompressed_data = Compress::Zlib::uncompress($raw);
+    if (-d File::Spec->catfile($path, '.git')) {
+        return WYAG::GitRepository->new(worktree => $path);
+    }
 
-    my ($type, $size) = ($uncompressed_data =~ /(^commit|tree|tag|blob) (\d+)\x00/);
+    my $parent = File::Spec->catfile($path, '..');
+    if ($parent eq $path) {
+        die 'No git directory.';
+    } else {
+        return;
+    }
+    return repo_find($parent);
+}
+
+# Compute path under repo's gitdir.
+sub repo_path {
+    my ($repo, @path) = @_;
+    return File::Spec->catfile($repo->gitdir, @path);
+}
+
+sub repo_file {
+    my ($mkdir, $repo, @path) = @_;
+    $mkdir //= !!0;
+    if (repo_dir($mkdir, $repo, @path[0..$#path-1])) {
+        return repo_path($repo, @path);
+    }
+}
+
+sub repo_dir {
+    my ($mkdir, $repo, @path) = @_;
+    my $path = repo_path($repo, @path);
+
+    if (-d $path) {
+        return $path;
+    } else {
+        die "Not a directory: $path";
+    }
+
+    if ($mkdir) {
+        mkdir $path
+            or die "cannot make dir $path: $!";
+    } else {
+        return;
+    }
+}
+
+sub object_read {
+    my ($repo, $sha1) = @_;
+
+    my $path = repo_file(0, $repo, 'objects', substr($sha1, 0, 2), substr($sha1, 2));
+
+    open(my $fh, "<:raw", $path) or die $!;
+
+    my $bufs;
+    while (read $fh, my $buf, 16) {
+        $bufs .= $buf;
+    }
+    close $fh;
+
+    my $raw = Compress::Zlib::uncompress($bufs);
+
+    my ($type, $size) = ($raw =~ /(^commit|tree|tag|blob) (\d+)\x00/);
     # TODO: size check
 
-    return WYAG::GitObject::Commit->new($file_path, $uncompressed_data) if ($type eq 'commit');
-    return WYAG::GitObject::Tree->new($file_path, $uncompressed_data)   if ($type eq 'tree');
-    return WYAG::GitObject::Tag->new($file_path, $uncompressed_data)    if ($type eq 'tag');
-    return WYAG::GitObject::Blob->new($file_path, $uncompressed_data)   if ($type eq 'blob');
+    return WYAG::GitObject::Commit->new(repo => $repo, size => $size, raw_data => $raw) if ($type eq 'commit');
+    return WYAG::GitObject::Tree->new(repo => $repo, size => $size, raw_data => $raw)   if ($type eq 'tree');
+    return WYAG::GitObject::Tag->new(repo => $repo, size => $size, raw_data => $raw)    if ($type eq 'tag');
+    return WYAG::GitObject::Blob->new(repo => $repo, size => $size, raw_data => $raw)   if ($type eq 'blob');
     die 'unreachable: invalid object type is detected.';
 }
 
