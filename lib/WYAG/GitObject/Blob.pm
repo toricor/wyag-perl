@@ -12,6 +12,12 @@ has repo => (
     default => '',
 );
 
+has blob_data => (
+    is => 'rw',
+    isa => 'Defined',
+    default => '',
+);
+
 sub serialize {
     die 'unimplemented';
 }

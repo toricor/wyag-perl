@@ -3,6 +3,9 @@ package WYAG::IO;
 use strict;
 use warnings;
 
+use Data::Validator;
+use WYAG::MouseType qw/SHA1/;
+
 sub get_raw_data {
     my ($class, $file_path) = @_;
 
@@ -16,6 +19,16 @@ sub get_raw_data {
     close $fh;
 
     return $raw;
+}
+
+sub build_object_path {
+    my $v = Data::Validator->new(
+        sha1 => SHA1,
+    )->with(qw/Method/);
+    my ($class, $args) = $v->validate(@_);
+
+    my $sha1 = $args->{sha1};
+    return '.git/objects/'. substr($sha1, 0, 2) . '/' . substr($sha1, 2);
 }
 
 1;

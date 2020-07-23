@@ -54,8 +54,7 @@ sub main {
     my $result;
     if (scalar(@{$res->{subcommand}}) > 0) {
         if ($res->{subcommand}->[0] eq 'cat-file') {
-            my $sha1 = $ARGV[0];
-            my $file_path  = '.git/objects/'. substr($sha1, 0, 2) . '/' . substr($sha1, 2);
+            my $file_path = WYAG::IO->build_object_path(sha1 => $ARGV[0]);
             my $git_object = read_and_build_git_object($file_path);
 
             $result = WYAG::Command::CatFile->run(+{
@@ -66,7 +65,6 @@ sub main {
     }
 
     say $result;
-
 }
 
 sub read_and_build_git_object {

@@ -19,6 +19,7 @@ use MouseX::Types
     -declare => [
         qw/
             GitObject
+            SHA1
         /,
     ];
 
@@ -29,6 +30,11 @@ subtype GitObject,
     as Object(),
     where { ref($_) =~ /\AWYAG::GitObject::(Blob|Tag|Tree|Commit)\z/mo },
     message { "GitObject is WYAG::GitObject::(Blob|Tag|Tree|Commit). got: ". ref $_ };
+
+subtype SHA1,
+    as Str(),
+    where { /[0-9a-z{40}]/ },
+    message { "SHA1 is 40 length string of a-z0-9. got: ". $_ };
 
 no Mouse::Util::TypeConstraints;
 1;
