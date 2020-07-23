@@ -1,5 +1,8 @@
+#use strict;
 use Getopt::Long::Subcommand;
 use feature qw/say/;
+use Compress::Zlib qw/uncompress/;
+use Digest::SHA1 qw/sha1_hex/;
 
 sub main {
     my %cat_file_opt;
@@ -37,9 +40,24 @@ sub main {
     die "do not set cat-file -t and -p options simultaneously" if $cat_file_opt{t} && $cat_file_opt{p};
 
     use DDP;
-    p $res;
-    p %cat_file_opt;
-    p @ARGV;
+    my $input_path = '.git/objects/22/33633418832240b615fa133ab84bb47d39969e';
+    my $compressed_data = <COMPRESSED>;
+    open(COMPRESSED, $input_path) or die $!;
+    binmode COMPRESSED;
+
+    my $raw = '';
+    while ($compressed_data = <COMPRESSED>) {
+        $raw .= $compressed_data;
+    }
+    close $compressed_data;
+
+    my $uncompressed_data = Compress::Zlib::uncompress($raw);
+    say $uncompressed_data;
+
+    my ($type, $size) = ($uncompressed_data =~ /(^commit|tree|tag|blob) (\d+)\x00/);
+
+    say $type;
+    say $size;
 }
 
 main();
