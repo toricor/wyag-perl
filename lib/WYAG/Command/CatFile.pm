@@ -1,6 +1,7 @@
 package WYAG::Command::CatFile;
 use strict;
 use warnings;
+use feature qw/say/;
 
 use Mouse;
 with 'WYAG::Command::Role::Runnable';
@@ -17,7 +18,7 @@ sub run {
     my ($class, $args) = $v->validate(@_);
     my ($git_object, $option) = @$args{qw/target option/};
 
-    return $git_object->serialize();
+    return say $git_object->serialize();
 }
 
 no Mouse;

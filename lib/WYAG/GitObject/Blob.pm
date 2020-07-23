@@ -6,6 +6,8 @@ use Mouse;
 with 'WYAG::GitObject::Role::Serializable';
 with 'WYAG::GitObject::Role::Deserializable';
 
+use WYAG::MouseType qw/Str UInt/;
+
 has repo => (
     is  => 'rw',
     isa => 'WYAG::GitRepository',
@@ -14,13 +16,13 @@ has repo => (
 
 has size => (
     is => 'ro',
-    isa => 'UInt',
+    isa => UInt,
     default => 0,
 );
 
 has raw_data => (
     is => 'rw',
-    isa => 'Defined',
+    isa => Str,
     default => '',
 );
 

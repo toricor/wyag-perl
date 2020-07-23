@@ -52,7 +52,6 @@ sub main {
     die "GetOptions failed!\n" unless $res->{success};
     die "do not set cat-file -t and -p options simultaneously" if $cat_file_opt{t} && $cat_file_opt{p};
 
-    my $result;
     if (scalar(@{$res->{subcommand}}) > 0) {
         if ($res->{subcommand}->[0] eq 'cat-file') {
             my $repo = repo_find();
@@ -60,14 +59,12 @@ sub main {
                 or die 'git cat-file needs SHA1 hash as arg';
             my $git_object = object_read($repo, $ARGV[0]);
 
-            $result = WYAG::Command::CatFile->run(+{
+            WYAG::Command::CatFile->run(+{
                 target => $git_object,
                 option => \%cat_file_opt,
             });
         }
     }
-
-    say $result;
 }
 
 sub repo_find {
@@ -135,12 +132,14 @@ sub object_read {
     my $raw = Compress::Zlib::uncompress($bufs);
 
     my ($type, $size) = ($raw =~ /(^commit|tree|tag|blob) (\d+)\x00/);
-    # TODO: size check
+    die "malformed object: bad length $sha1" unless $size == length($raw) - length($type) - length($size) - 2;
 
-    return WYAG::GitObject::Commit->new(repo => $repo, size => $size, raw_data => $raw) if ($type eq 'commit');
-    return WYAG::GitObject::Tree->new(repo => $repo, size => $size, raw_data => $raw)   if ($type eq 'tree');
-    return WYAG::GitObject::Tag->new(repo => $repo, size => $size, raw_data => $raw)    if ($type eq 'tag');
-    return WYAG::GitObject::Blob->new(repo => $repo, size => $size, raw_data => $raw)   if ($type eq 'blob');
+    my $content = substr($raw, length($type) + length($size) + 2);
+
+    return WYAG::GitObject::Commit->new(repo => $repo, size => $size, raw_data => $content) if ($type eq 'commit');
+    return WYAG::GitObject::Tree->new(repo => $repo, size => $size, raw_data => $content)   if ($type eq 'tree');
+    return WYAG::GitObject::Tag->new(repo => $repo, size => $size, raw_data => $content)    if ($type eq 'tag');
+    return WYAG::GitObject::Blob->new(repo => $repo, size => $size, raw_data => $content)   if ($type eq 'blob');
     die 'unreachable: invalid object type is detected.';
 }
 
