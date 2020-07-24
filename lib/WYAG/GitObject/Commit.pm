@@ -3,6 +3,7 @@ use strict;
 use warnings;
 
 use Mouse;
+with 'WYAG::GitObject::Role::TypeIdentifiable';
 with 'WYAG::GitObject::Role::Serializable';
 with 'WYAG::GitObject::Role::Deserializable';
 
@@ -23,6 +24,8 @@ has raw_data => (
     isa => 'Defined',
     default => '',
 );
+
+sub fmt { 'commit' }
 
 sub serialize {
     my $self = shift;

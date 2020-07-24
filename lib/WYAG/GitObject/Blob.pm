@@ -3,6 +3,7 @@ use strict;
 use warnings;
 
 use Mouse;
+with 'WYAG::GitObject::Role::TypeIdentifiable';
 with 'WYAG::GitObject::Role::Serializable';
 with 'WYAG::GitObject::Role::Deserializable';
 
@@ -25,6 +26,8 @@ has raw_data => (
     isa => Str,
     default => '',
 );
+
+sub fmt { 'blob' }
 
 sub serialize {
     my $self = shift;

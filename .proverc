@@ -1,0 +1,7 @@
+--timer
+--color
+--failures
+--trap
+--recurse
+--shuffle
+--exec "carton exec perl -Ilib"

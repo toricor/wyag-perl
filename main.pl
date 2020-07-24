@@ -4,9 +4,7 @@ use warnings;
 use lib './lib';
 use feature qw/say/;
 
-use Compress::Zlib qw/uncompress/;
-use Digest::SHA1 qw/sha1_hex/;
-use File::Spec;
+
 use Getopt::Long::Subcommand;
 
 use WYAG::GitObject::Commit;
@@ -16,6 +14,7 @@ use WYAG::GitObject::Blob;
 use WYAG::GitRepository;
 
 use WYAG::Command::CatFile;
+use WYAG::Resource::Object;
 
 sub main {
     my %cat_file_opt;
@@ -54,10 +53,9 @@ sub main {
 
     if (scalar(@{$res->{subcommand}}) > 0) {
         if ($res->{subcommand}->[0] eq 'cat-file') {
-            my $repo = repo_find();
             my $sha1 = $ARGV[0]
                 or die 'git cat-file needs SHA1 hash as arg';
-            my $git_object = object_read($repo, $ARGV[0]);
+            my $git_object = WYAG::Resource::Object->object_read(+{repository => repo_find(), sha1 => $sha1});
 
             WYAG::Command::CatFile->run(+{
                 target => $git_object,
@@ -65,82 +63,6 @@ sub main {
             });
         }
     }
-}
-
-sub repo_find {
-    my ($path) = @_;
-    $path //= '.';
-
-    if (-d File::Spec->catfile($path, '.git')) {
-        return WYAG::GitRepository->new(worktree => $path);
-    }
-
-    my $parent = File::Spec->catfile($path, '..');
-    if ($parent eq $path) {
-        die 'No git directory.';
-    } else {
-        return;
-    }
-    return repo_find($parent);
-}
-
-# Compute path under repo's gitdir.
-sub repo_path {
-    my ($repo, @path) = @_;
-    return File::Spec->catfile($repo->gitdir, @path);
-}
-
-sub repo_file {
-    my ($mkdir, $repo, @path) = @_;
-    $mkdir //= !!0;
-    if (repo_dir($mkdir, $repo, @path[0..$#path-1])) {
-        return repo_path($repo, @path);
-    }
-}
-
-sub repo_dir {
-    my ($mkdir, $repo, @path) = @_;
-    my $path = repo_path($repo, @path);
-
-    if (-d $path) {
-        return $path;
-    } else {
-        die "Not a directory: $path";
-    }
-
-    if ($mkdir) {
-        mkdir $path
-            or die "cannot make dir $path: $!";
-    } else {
-        return;
-    }
-}
-
-sub object_read {
-    my ($repo, $sha1) = @_;
-
-    my $path = repo_file(0, $repo, 'objects', substr($sha1, 0, 2), substr($sha1, 2));
-
-    open(my $fh, "<:raw", $path) or die $!;
-
-    my $bufs;
-    while (read $fh, my $buf, 16) {
-        $bufs .= $buf;
-    }
-    close $fh;
-
-    my $raw = Compress::Zlib::uncompress($bufs);
-
-    my ($type, $size) = ($raw =~ /(^commit|tree|tag|blob) (\d+)\x00/);
-    die "malformed object: bad length $sha1" unless $size == length($raw) - length($type) - length($size) - 2;
-
-    my $content = substr($raw, length($type) + length($size) + 2);
-
-    return WYAG::GitObject::Commit->new(repo => $repo, size => $size, raw_data => $content) if ($type eq 'commit');
-    return WYAG::GitObject::Tree->new(repo => $repo, size => $size, raw_data => $content)   if ($type eq 'tree');
-    return WYAG::GitObject::Tag->new(repo => $repo, size => $size, raw_data => $content)    if ($type eq 'tag');
-    return WYAG::GitObject::Blob->new(repo => $repo, size => $size, raw_data => $content)   if ($type eq 'blob');
-    die 'unreachable: invalid object type is detected.';
 }
 
 main();
