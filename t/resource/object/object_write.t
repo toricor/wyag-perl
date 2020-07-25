@@ -27,7 +27,7 @@ describe 'about object_write' => sub {
         };
 
         it 'should match returned sha1 value' => sub {
-            is $sha1, '03e8b884e2d8ca113aa8ec3dc7cc91ce2b2a4dc2';
+            is $sha1, 'a5a01cf07c94c193ab53e52a7541090e5d5505d3';
         };
     };
 
