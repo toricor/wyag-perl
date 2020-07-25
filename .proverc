@@ -4,4 +4,4 @@
 --trap
 --recurse
 --shuffle
---exec "carton exec perl -Ilib"
+--exec "carton exec -- perl -Ilib"
