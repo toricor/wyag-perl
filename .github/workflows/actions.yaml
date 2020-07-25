@@ -31,4 +31,4 @@ jobs:
       - name: Install Dependencies
         run: curl -sL https://git.io/cpm | perl - install -g --show-build-log-on-failure
       - name: Run Tests
-        run: export PERL5LIB="local/lib/perl5:lib" && prove t
+        run: prove -lsfr t
