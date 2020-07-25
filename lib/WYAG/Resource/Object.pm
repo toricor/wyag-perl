@@ -10,6 +10,11 @@ use Digest::SHA1 qw/sha1_hex/;
 use File::Spec;
 
 use WYAG::MouseType qw/Bool GitObject SHA1/;
+use WYAG::GitRepository;
+use WYAG::GitObject::Commit;
+use WYAG::GitObject::Tree;
+use WYAG::GitObject::Tag;
+use WYAG::GitObject::Blob;
 
 use Exporter 'import';
 our @EXPORT_OK = qw/repo_find repo_path repo_dir repo_file/;
@@ -26,8 +31,8 @@ sub object_write {
     my $len = length($data);
 
     # Add header
-    my $result = "$object->fmt() $len\x00$data";
-    my $digest = sha1_hex($data);
+    my $result = $object->fmt() . " $len\x00$data";
+    my $digest = sha1_hex($result);
 
     if ($actually_write_fg) {
         # TODO

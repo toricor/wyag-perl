@@ -20,7 +20,11 @@ sub run {
     my ($class, $args) = $v->validate(@_);
     my ($object, $option, $repo) = @$args{qw/object option repo/};
 
-    my $sha1 = WYAG::Resource::Object->object_write(object => $object, actually_write_fg => defined($repo));
+    my $sha1 = WYAG::Resource::Object->object_write(+{
+        object            => $object,
+        actually_write_fg => defined($repo),
+    });
+
     say $sha1;
     return $sha1;
 }
