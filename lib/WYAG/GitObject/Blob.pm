@@ -11,8 +11,7 @@ use WYAG::MouseType qw/Str UInt/;
 
 has repo => (
     is  => 'rw',
-    isa => 'WYAG::GitRepository',
-    required => 1,
+    isa => 'Maybe[WYAG::GitRepository]',
 );
 
 has size => (

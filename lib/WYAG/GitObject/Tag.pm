@@ -9,8 +9,7 @@ with 'WYAG::GitObject::Role::Deserializable';
 
 has repo => (
     is  => 'rw',
-    isa => 'WYAG::GitRepository',
-    required => 1,
+    isa => 'Maybe[WYAG::GitRepository]',
 );
 
 has size => (

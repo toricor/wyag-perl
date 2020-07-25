@@ -12,7 +12,7 @@ use File::Spec;
 use WYAG::MouseType qw/Bool GitObject SHA1/;
 
 use Exporter 'import';
-our @EXPORT = qw/repo_find repo_path repo_dir repo_file/;
+our @EXPORT_OK = qw/repo_find repo_path repo_dir repo_file/;
 
 sub object_write {
     state $v; $v //= Data::Validator->new(
@@ -60,14 +60,16 @@ sub object_read {
     die "malformed object: bad length $sha1" unless $size == length($raw) - length($type) - length($size) - 2;
 
     my $content = substr($raw, length($type) + length($size) + 2);
-use DDP;
-p $content;
+
     return WYAG::GitObject::Commit->new(repo => $repo, size => $size, raw_data => $content) if ($type eq 'commit');
     return WYAG::GitObject::Tree->new(repo => $repo, size => $size, raw_data => $content)   if ($type eq 'tree');
     return WYAG::GitObject::Tag->new(repo => $repo, size => $size, raw_data => $content)    if ($type eq 'tag');
     return WYAG::GitObject::Blob->new(repo => $repo, size => $size, raw_data => $content)   if ($type eq 'blob');
     die 'unreachable: invalid object type is detected.';
 }
+
+
+
 
 # 
 #
