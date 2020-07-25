@@ -8,7 +8,6 @@ use WYAG::GitRepository;
 use WYAG::Resource::Object;
 use WYAG::GitObject::Blob;
 
-
 describe 'about object_write' => sub {
     context 'when actually_write = False' => sub {
         my $sha1;
