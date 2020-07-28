@@ -23,7 +23,8 @@ sub run {
         repository => repo_find(),
         sha1       => $sha1,
     });
-
+use DDP;
+p $git_object->raw_data;
     return $git_object->serialize();
 }
 

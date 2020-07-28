@@ -7,6 +7,8 @@ with 'WYAG::GitObject::Role::TypeIdentifiable';
 with 'WYAG::GitObject::Role::Serializable';
 with 'WYAG::GitObject::Role::Deserializable';
 
+use WYAG::MouseType qw/UInt/;
+
 has repo => (
     is  => 'rw',
     isa => 'Maybe[WYAG::GitRepository]',
@@ -14,7 +16,7 @@ has repo => (
 
 has size => (
     is => 'ro',
-    isa => 'UInt',
+    isa => UInt,
     default => 0,
 );
 
