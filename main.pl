@@ -81,19 +81,19 @@ sub main {
             my ($obj, $repo);
             if ($hash_object_opt{type}) {
                 if ($fmt eq 'commit') {
-                    $obj = WYAG::GitObject::Commit->new(repo => undef, size => $size, raw_data => $data);
+                    $obj = WYAG::GitObject::Commit->new(repo => undef, raw_data => $data);
                 } elsif ($fmt eq 'tree') {
-                    $obj = WYAG::GitObject::Tree->new(repo => undef, size => $size, raw_data => $data);
+                    $obj = WYAG::GitObject::Tree->new(repo => undef, raw_data => $data);
                 } elsif ($fmt eq 'tag') {
-                    $obj = WYAG::GitObject::Tag->new(repo => undef, size => $size, raw_data => $data);
+                    $obj = WYAG::GitObject::Tag->new(repo => undef, raw_data => $data);
                 } elsif ($fmt eq 'blob') {
-                    $obj = WYAG::GitObject::Blob->new(repo => undef, size => $size, raw_data => $data);
+                    $obj = WYAG::GitObject::Blob->new(repo => undef, raw_data => $data);
                 } else {
                     die 'invalid type';
                 }
             } elsif ($hash_object_opt{write}) {
                 $repo = WYAG::GitRepository->new(worktree => '.');
-                $obj = WYAG::GitObject::Blob->new(repo => $repo, size => $size, raw_data => $data);
+                $obj = WYAG::GitObject::Blob->new(repo => $repo, raw_data => $data);
             } else {
                 die 'unreachable!';
             }

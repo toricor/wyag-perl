@@ -14,12 +14,10 @@ has repo => (
     isa => 'Maybe[WYAG::GitRepository]',
 );
 
-has size => (
-    is => 'ro',
-    isa => UInt,
-    default => 0,
-);
-
+sub size {
+    my $self = shift;
+    return length($self->raw_data);
+}
 
 has raw_data => (
     is => 'rw',
@@ -32,7 +30,6 @@ sub fmt { 'tag' }
 sub serialize {
     my $self = shift;
     return $self->raw_data;
-    die 'unimplemented';
 }
 
 sub deserialize {

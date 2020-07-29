@@ -4,6 +4,7 @@ use warnings;
 
 use Mouse;
 with 'WYAG::GitObject::Role::TypeIdentifiable';
+with 'WYAG::GitObject::Role::Sized';
 with 'WYAG::GitObject::Role::Serializable';
 with 'WYAG::GitObject::Role::Deserializable';
 
@@ -14,12 +15,10 @@ has repo => (
     isa => 'Maybe[WYAG::GitRepository]',
 );
 
-has size => (
-    is => 'ro',
-    isa => UInt,
-    default => 0,
-);
-
+sub size {
+    my $self = shift;
+    return length($self->raw_data);
+}
 has raw_data => (
     is => 'rw',
     isa => 'Defined',
@@ -31,7 +30,6 @@ sub fmt { 'commit' }
 sub serialize {
     my $self = shift;
     return $self->raw_data;
-    die 'unimplemented';
 }
 
 sub deserialize {
