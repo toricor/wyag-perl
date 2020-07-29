@@ -8,6 +8,7 @@ use Compress::Zlib qw/uncompress/;
 use Data::Validator;
 use Digest::SHA1 qw/sha1_hex/;
 use File::Spec;
+use Hash::Ordered;
 
 use WYAG::MouseType qw/Bool GitObject SHA1/;
 use WYAG::GitRepository;
@@ -15,6 +16,7 @@ use WYAG::GitObject::Commit;
 use WYAG::GitObject::Tree;
 use WYAG::GitObject::Tag;
 use WYAG::GitObject::Blob;
+use WYAG::Resource::File;
 
 use Exporter 'import';
 our @EXPORT_OK = qw/repo_find repo_path repo_dir repo_file/;
@@ -50,16 +52,8 @@ sub object_read {
     my ($repo, $sha1) = @$args{qw/repository sha1/};
 
     my $path = repo_file(0, $repo, 'objects', substr($sha1, 0, 2), substr($sha1, 2));
-
-    open(my $fh, "<:raw", $path) or die $!;
-
-    my $bufs;
-    while (read $fh, my $buf, 16) {
-        $bufs .= $buf;
-    }
-    close $fh;
-
-    my $raw = Compress::Zlib::uncompress($bufs);
+    my $compressed = WYAG::Resource::File->read($path);
+    my $raw = Compress::Zlib::uncompress($compressed);
 
     my ($type, $size) = ($raw =~ /(^commit|tree|tag|blob) (\d+)\x00/);
     die "malformed object: bad length $sha1" unless $size == length($raw) - length($type) - length($size) - 2;
@@ -73,8 +67,44 @@ sub object_read {
     die 'unreachable: invalid object type is detected.';
 }
 
+# Key-Value List with Message
+sub kvlm_parse {
+    my ($class, $raw, $start, $dct) = @_;
 
+    unless (defined $dct) {
+        $dct = Hash::Ordered->new();
+    }
 
+    my $spc = index($raw, " ", $start);
+    my $nl  = index($raw, "\n", $start);
+
+    if ($spc < 0 || $nl < $spc) {
+        #die 'invalid line' unless $nl == $start;
+        $dct->set("\n" => substr($raw, $start+1));
+        return $dct;
+    }
+
+    # recursive case
+    my $key = substr($raw, $start, $start + $spc);
+    my $end = $start;
+
+    while (1) {
+        $end = index($raw, "\n", $end+1);
+        last if substr($raw, $end+1, 1) ne " ";
+    }
+
+    my $value = substr($raw, $spc+1);
+    $value =~ s/\\n /\\n/g;
+
+    if ($dct->exists($key)) {
+
+        $dct->set($key => [$dct->get($key) => $value]);
+    } else {
+        $dct->set($key => $value);
+    }
+
+    return $class->kvlm_parse($raw, $end+1, $dct);
+}
 
 # 
 #

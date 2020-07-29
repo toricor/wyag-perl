@@ -8,7 +8,7 @@ with 'WYAG::Command::Role::Runnable';
 
 use Data::Validator;
 
-use WYAG::MouseType qw/SHA1 HashRef/;
+use WYAG::MouseType qw/SHA1 HashRef GitObject/;
 use WYAG::Resource::Object qw/repo_find/;
 
 sub run {
@@ -23,9 +23,24 @@ sub run {
         repository => repo_find(),
         sha1       => $sha1,
     });
-use DDP;
-p $git_object->raw_data;
-    return $git_object->serialize();
+
+    say $class->format(git_object => $git_object, option => $option);
+}
+
+sub format {
+    state $v; $v //= Data::Validator->new(
+        git_object => GitObject,
+        option     => HashRef,
+    )->with(qw/Method/);
+    my ($class, $args) = $v->validate(@_);
+    my ($git_object, $option) = @$args{qw/git_object option/};
+
+    if ($option->{type}) {
+        return $git_object->fmt();
+    }
+    if ($option->{pretty_print}) {
+        return $git_object->serialize();
+    }
 }
 
 no Mouse;

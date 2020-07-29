@@ -22,7 +22,7 @@ sub run {
 
     my $sha1 = WYAG::Resource::Object->object_write(+{
         object            => $object,
-        actually_write_fg => defined($repo),
+        actually_write_fg => !!$repo,
     });
 
     say $sha1;

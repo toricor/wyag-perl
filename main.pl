@@ -17,6 +17,7 @@ use WYAG::Command::CatFile;
 use WYAG::Command::HashObject;
 
 use WYAG::Resource::Object;
+use WYAG::Resource::File;
 
 sub main {
     my %cat_file_opt;
@@ -39,10 +40,10 @@ sub main {
                 summary => 'Provide content or type and size information for repository objects',
                 options => +{
                     t => +{
-                        handler => \$cat_file_opt{t},
+                        handler => \$cat_file_opt{type},
                     },
                     p => +{
-                        handler => \$cat_file_opt{p},
+                        handler => \$cat_file_opt{pretty_print},
                     },
                 },
             },
@@ -50,17 +51,17 @@ sub main {
                 summary => 'Compute object ID and optionally creates a blob from a file',
                 options => +{
                     t => +{
-                        handler => \$hash_object_opt{t},
+                        handler => \$hash_object_opt{type},
                     },
                     w => +{
-                        handler => \$hash_object_opt{w},
+                        handler => \$hash_object_opt{write},
                     }, 
                 },
             },
         },
     );
     die "GetOptions failed!\n" unless $res->{success};
-    die "do not set cat-file -t and -p options simultaneously" if $cat_file_opt{t} && $cat_file_opt{p};
+    die "do not set cat-file -t and -p options simultaneously" if $cat_file_opt{type} && $cat_file_opt{pretty_print};
 
     if (scalar(@{$res->{subcommand}}) > 0) {
         if ($res->{subcommand}->[0] eq 'cat-file') {
@@ -73,19 +74,12 @@ sub main {
             });
         }
         elsif ($res->{subcommand}->[0] eq 'hash-object') {
-            my $path = $hash_object_opt{t} ? $ARGV[1] : $ARGV[0];
-            open(my $fh, "<:raw", $path) or die $!;
-
-            my $data;
-            while (read $fh, my $buf, 16) {
-                $data .= $buf;
-            }
-            close $fh;
+            my ($path, $fmt) = _parse_args_for_hash_object(\%hash_object_opt, \@ARGV);
+            my $data = WYAG::Resource::File->read($path);
             my $size = length($data);
 
             my ($obj, $repo);
-            if ($hash_object_opt{t}) {
-                my $fmt = $ARGV[0];
+            if ($hash_object_opt{type}) {
                 if ($fmt eq 'commit') {
                     $obj = WYAG::GitObject::Commit->new(repo => undef, size => $size, raw_data => $data);
                 } elsif ($fmt eq 'tree') {
@@ -97,7 +91,7 @@ sub main {
                 } else {
                     die 'invalid type';
                 }
-            } elsif ($hash_object_opt{w}) {
+            } elsif ($hash_object_opt{write}) {
                 $repo = WYAG::GitRepository->new(worktree => '.');
                 $obj = WYAG::GitObject::Blob->new(repo => $repo, size => $size, raw_data => $data);
             } else {
@@ -114,5 +108,17 @@ sub main {
 }
 
 main();
+
+sub _parse_args_for_hash_object {
+    my ($hash_object_opt, $argv) = @_;
+    my $path = $hash_object_opt->{type} ? $argv->[1] : $argv->[0];
+
+    my $fmt;
+    if ($hash_object_opt->{type}) {
+        $fmt = $argv->[0];
+    }
+
+    return ($path, $fmt);
+}
 
 1;
