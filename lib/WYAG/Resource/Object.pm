@@ -2,7 +2,7 @@ package WYAG::Resource::Object;
 
 use strict;
 use warnings;
-use feature qw/state/;
+use feature qw/say state/;
 
 use Compress::Zlib qw/uncompress/;
 use Data::Validator;
@@ -32,12 +32,16 @@ sub object_write {
     my $data = $object->serialize();
     my $len = length($data);
 
-    # Add header
+    # build header
     my $result = $object->fmt() . " $len\x00$data";
+    # e.g. 6e245b9cd18643f5b2b38852a8320d7b557d3f8e
     my $digest = sha1_hex($result);
 
     if ($actually_write_fg) {
         # TODO
+        say 'cannot write a file yet';
+        # compress as a zip
+        # save in .git/objects/6e/245b9cd18643f5b2b38852a8320d7b557d3f8e
     }
 
     return $digest;

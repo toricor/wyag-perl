@@ -76,30 +76,29 @@ sub main {
         elsif ($res->{subcommand}->[0] eq 'hash-object') {
             my ($path, $fmt) = _parse_args_for_hash_object(\%hash_object_opt, \@ARGV);
             my $data = WYAG::Resource::File->read($path);
-            my $size = length($data);
+            my $repo = WYAG::GitRepository->new(worktree => '.') if ($hash_object_opt{write});
 
-            my ($obj, $repo);
+            my $git_object;
             if ($hash_object_opt{type}) {
                 if ($fmt eq 'commit') {
-                    $obj = WYAG::GitObject::Commit->new(repo => undef, raw_data => $data);
+                    $git_object = WYAG::GitObject::Commit->new(repo => undef, raw_data => $data);
                 } elsif ($fmt eq 'tree') {
-                    $obj = WYAG::GitObject::Tree->new(repo => undef, raw_data => $data);
+                    $git_object = WYAG::GitObject::Tree->new(repo => undef, raw_data => $data);
                 } elsif ($fmt eq 'tag') {
-                    $obj = WYAG::GitObject::Tag->new(repo => undef, raw_data => $data);
+                    $git_object = WYAG::GitObject::Tag->new(repo => undef, raw_data => $data);
                 } elsif ($fmt eq 'blob') {
-                    $obj = WYAG::GitObject::Blob->new(repo => undef, raw_data => $data);
+                    $git_object = WYAG::GitObject::Blob->new(repo => undef, raw_data => $data);
                 } else {
                     die 'invalid type';
                 }
             } elsif ($hash_object_opt{write}) {
-                $repo = WYAG::GitRepository->new(worktree => '.');
-                $obj = WYAG::GitObject::Blob->new(repo => $repo, raw_data => $data);
+                $git_object = WYAG::GitObject::Blob->new(repo => $repo, raw_data => $data);
             } else {
                 die 'unreachable!';
             }
 
             WYAG::Command::HashObject->run(+{
-                object => $obj,
+                object => $git_object,
                 option => \%hash_object_opt,
                 repo   => $repo,
             });
