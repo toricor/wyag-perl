@@ -93,6 +93,13 @@ sub main {
                 repo   => $repo,
             });
         }
+        else {
+            die 'unreachable! (GetOptions will return early)';
+        }
+    }
+    else {
+        die 'args are needed' if scalar(@ARGV) == 0;
+        die 'unreachable!';
     }
 }
 
