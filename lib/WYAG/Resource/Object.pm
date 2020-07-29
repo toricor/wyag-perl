@@ -10,7 +10,7 @@ use Digest::SHA1 qw/sha1_hex/;
 use File::Spec;
 use Hash::Ordered;
 
-use WYAG::MouseType qw/Bool GitObject SHA1/;
+use WYAG::MouseType qw/Bool GitObject GitObjectKind SHA1/;
 use WYAG::GitRepository;
 use WYAG::GitObject::Commit;
 use WYAG::GitObject::Tree;
@@ -64,10 +64,28 @@ sub object_read {
 
     my $content = substr($raw, length($type) + length($size) + 2);
 
-    return WYAG::GitObject::Commit->new(repo => $repo, size => $size, raw_data => $content) if ($type eq 'commit');
-    return WYAG::GitObject::Tree->new(repo => $repo, size => $size, raw_data => $content)   if ($type eq 'tree');
-    return WYAG::GitObject::Tag->new(repo => $repo, size => $size, raw_data => $content)    if ($type eq 'tag');
-    return WYAG::GitObject::Blob->new(repo => $repo, size => $size, raw_data => $content)   if ($type eq 'blob');
+    return $class->_build_object($type, $repo, $content);
+}
+
+sub build_object {
+    state $v; $v //= Data::Validator->new(
+        fmt        => GitObjectKind,
+        repository => 'Maybe[WYAG::GitRepository]',
+        raw_data   => 'Str',
+    )->with(qw/Method/);
+    my ($class, $args) = $v->validate(@_);
+    my ($fmt, $repo, $raw_data) = @$args{qw/fmt repository raw_data/};
+
+    return $class->_build_object($fmt, $repo, $raw_data);
+}
+
+sub _build_object {
+    my ($class, $type, $repo, $content) = @_;
+
+    return WYAG::GitObject::Commit->new(repo => $repo, raw_data => $content) if ($type eq 'commit');
+    return WYAG::GitObject::Tree->new(repo => $repo, raw_data => $content)   if ($type eq 'tree');
+    return WYAG::GitObject::Tag->new(repo => $repo, raw_data => $content)    if ($type eq 'tag');
+    return WYAG::GitObject::Blob->new(repo => $repo, raw_data => $content)   if ($type eq 'blob');
     die 'unreachable: invalid object type is detected.';
 }
 

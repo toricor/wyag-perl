@@ -80,19 +80,9 @@ sub main {
 
             my $git_object;
             if ($hash_object_opt{type}) {
-                if ($fmt eq 'commit') {
-                    $git_object = WYAG::GitObject::Commit->new(repo => undef, raw_data => $data);
-                } elsif ($fmt eq 'tree') {
-                    $git_object = WYAG::GitObject::Tree->new(repo => undef, raw_data => $data);
-                } elsif ($fmt eq 'tag') {
-                    $git_object = WYAG::GitObject::Tag->new(repo => undef, raw_data => $data);
-                } elsif ($fmt eq 'blob') {
-                    $git_object = WYAG::GitObject::Blob->new(repo => undef, raw_data => $data);
-                } else {
-                    die 'invalid type';
-                }
+                $git_object = WYAG::Resource::Object->build_object(fmt => $fmt, repository => undef, raw_data => $data);
             } elsif ($hash_object_opt{write}) {
-                $git_object = WYAG::GitObject::Blob->new(repo => $repo, raw_data => $data);
+                $git_object = WYAG::Resource::Object->build_object(fmt => 'blob', repository => $repo, raw_data => $data);
             } else {
                 die 'unreachable!';
             }

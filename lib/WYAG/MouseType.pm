@@ -20,6 +20,7 @@ use MouseX::Types
         qw/
             UInt
             GitObject
+            GitObjectKind
             SHA1
         /,
     ];
@@ -34,6 +35,8 @@ subtype UInt,
     message { 'UInt must be >= 0' };
 
 ## loose object
+enum GitObjectKind, qw/blob tag tree commit/;
+
 subtype GitObject,
     as Object(),
     where { ref($_) =~ /\AWYAG::GitObject::(Blob|Tag|Tree|Commit)\z/mo },
