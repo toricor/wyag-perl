@@ -53,12 +53,7 @@ Update README.md
 EOS
             $oh = WYAG::Resource::Object->kvlm_parse($s, 0);
         };
-        it 'hoge' => sub {
-            use DDP;
-            my $iter = $oh->iterator;
-            
-            while ( my ($key,$value) = $iter->() ) { my @a = ($key, $value); p @a;}
-        };
+        it 'should parse the typical commit';
     };
 };
 
