@@ -4,19 +4,10 @@ use warnings;
 use lib './lib';
 use feature qw/say/;
 
-
 use Getopt::Long::Subcommand;
-
-use WYAG::GitObject::Commit;
-use WYAG::GitObject::Tree;
-use WYAG::GitObject::Tag;
-use WYAG::GitObject::Blob;
-use WYAG::GitRepository;
 
 use WYAG::Command::CatFile;
 use WYAG::Command::HashObject;
-
-use WYAG::Resource::Object;
 use WYAG::Resource::File;
 
 sub main {
@@ -75,22 +66,11 @@ sub main {
         }
         elsif ($res->{subcommand}->[0] eq 'hash-object') {
             my ($path, $fmt) = _parse_args_for_hash_object(\%hash_object_opt, \@ARGV);
-            my $data = WYAG::Resource::File->read($path);
-            my $repo = WYAG::GitRepository->new(worktree => '.') if ($hash_object_opt{write});
-
-            my $git_object;
-            if ($hash_object_opt{type}) {
-                $git_object = WYAG::Resource::Object->build_object(fmt => $fmt, repository => undef, raw_data => $data);
-            } elsif ($hash_object_opt{write}) {
-                $git_object = WYAG::Resource::Object->build_object(fmt => 'blob', repository => $repo, raw_data => $data);
-            } else {
-                die 'unreachable!';
-            }
 
             WYAG::Command::HashObject->run(+{
-                object => $git_object,
-                option => \%hash_object_opt,
-                repo   => $repo,
+                fmt      => $fmt,
+                raw_data => WYAG::Resource::File->read($path),
+                option   => \%hash_object_opt,
             });
         }
         else {
@@ -103,8 +83,6 @@ sub main {
     }
 }
 
-main();
-
 sub _parse_args_for_hash_object {
     my ($hash_object_opt, $argv) = @_;
     my $path = $hash_object_opt->{type} ? $argv->[1] : $argv->[0];
@@ -116,5 +94,7 @@ sub _parse_args_for_hash_object {
 
     return ($path, $fmt);
 }
+
+main();
 
 1;

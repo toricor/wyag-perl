@@ -8,25 +8,34 @@ with 'WYAG::Command::Role::Runnable';
 
 use Data::Validator;
 
-use WYAG::MouseType qw/HashRef GitObject/;
+use WYAG::MouseType qw/Maybe GitObjectKind Str HashRef/;
 use WYAG::Resource::Object;
 
 sub run {
     state $v; $v //= Data::Validator->new(
-        object => GitObject,
-        option => HashRef,
-        repo   => 'Maybe[WYAG::GitRepository]',
+        fmt      => Maybe[GitObjectKind],
+        raw_data => Str,
+        option   => HashRef,
     )->with(qw/Method/);
     my ($class, $args) = $v->validate(@_);
-    my ($object, $option, $repo) = @$args{qw/object option repo/};
+    my ($fmt, $raw_data, $option) = @$args{qw/fmt raw_data option/};
+
+    my ($git_object, $repo);
+    if ($option->{type}) {
+        $git_object = WYAG::Resource::Object->build_object(fmt => $fmt, repository => undef, raw_data => $raw_data);
+    } elsif ($option->{write}) {
+        $repo = WYAG::GitRepository->new(worktree => '.');
+        $git_object = WYAG::Resource::Object->build_object(fmt => 'blob', repository => $repo, raw_data => $raw_data);
+    } else {
+        die 'unreachable!';
+    }
 
     my $sha1 = WYAG::Resource::Object->object_write(+{
-        object            => $object,
+        object            => $git_object,
         actually_write_fg => !!$repo,
     });
 
     say $sha1;
-    return $sha1;
 }
 
 no Mouse;
