@@ -11,6 +11,7 @@ use Data::Validator;
 use WYAG::MouseType qw/Maybe GitObjectKind Str HashRef/;
 use WYAG::Resource::Object;
 
+# TODO: use Mouse
 sub run {
     state $v; $v //= Data::Validator->new(
         fmt      => Maybe[GitObjectKind],
