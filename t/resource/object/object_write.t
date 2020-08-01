@@ -35,12 +35,10 @@ describe 'about object_write' => sub {
         };
 
         it 'should match returned sha1 value' => sub {
-            warn 'first it';
             is $sha1, 'a5a01cf07c94c193ab53e52a7541090e5d5505d3';
         };
 
         it 'should not write the file' => sub {
-            warn 'second it';
             is $guard->call_count('WYAG::Resource::File', 'write'), 0;
         };
     };
