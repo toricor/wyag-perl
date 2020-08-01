@@ -17,14 +17,10 @@ my $guard = mock_guard('WYAG::Resource::File', +{write => sub {
 }});
 
 describe 'about object_write' => sub {
-    after all => sub {
-        $output_path = '';
-        warn 'after';
-    };
-
     context 'when actually_write = False' => sub {
         my ($sha1, $repo);
         before all => sub {
+            $output_path = '';
             my $dir = File::Temp->newdir();
             mkdir $dir->dirname . '.git' or die 'cannot make .git dir';
 
@@ -52,6 +48,7 @@ describe 'about object_write' => sub {
     context 'when actually_write = True' => sub {
         my ($sha1, $repo);
         before all => sub {
+            $output_path = '';
             my $dir = File::Temp->newdir();
             mkdir $dir->dirname . '.git' or die 'cannot make .git dir';
 
@@ -65,7 +62,6 @@ describe 'about object_write' => sub {
             });
         };
         it 'should match returned sha1 value' => sub {
-            warn 'second first it';
             is $sha1, 'bff0772a1f169169058e78a097c80afff7569016';
         };
         it 'should write a file' => sub {

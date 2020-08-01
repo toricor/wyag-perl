@@ -25,7 +25,7 @@ our @EXPORT_OK = qw/repo_find repo_path repo_dir repo_file/;
 sub object_write {
     state $v; $v //= Data::Validator->new(
         object            => GitObject,
-        actually_write_fg => +{isa => Bool, default => sub {0}},
+        actually_write_fg => +{isa => Bool, default => sub {1}},
     )->with(qw/Method/);
     my ($class, $args) = $v->validate(@_);
     my ($object, $actually_write_fg) = @$args{qw/object actually_write_fg/};
