@@ -4,10 +4,11 @@ use strict;
 use warnings;
 use feature qw/say state/;
 
-use Compress::Zlib qw/uncompress/;
+use Compress::Zlib qw/compress uncompress/;
 use Data::Validator;
 use Digest::SHA1 qw/sha1_hex/;
 use File::Spec;
+use File::Path qw/make_path/;
 use Hash::Ordered;
 
 use WYAG::MouseType qw/Bool GitObject GitObjectKind SHA1/;
@@ -24,7 +25,7 @@ our @EXPORT_OK = qw/repo_find repo_path repo_dir repo_file/;
 sub object_write {
     state $v; $v //= Data::Validator->new(
         object            => GitObject,
-        actually_write_fg => +{isa => Bool, default => sub {1}},
+        actually_write_fg => +{isa => Bool, default => sub {0}},
     )->with(qw/Method/);
     my ($class, $args) = $v->validate(@_);
     my ($object, $actually_write_fg) = @$args{qw/object actually_write_fg/};
@@ -32,16 +33,28 @@ sub object_write {
     my $data = $object->serialize();
     my $len = length($data);
 
-    # build header
+    # add header
     my $result = $object->fmt() . " $len\x00$data";
     # e.g. 6e245b9cd18643f5b2b38852a8320d7b557d3f8e
     my $digest = sha1_hex($result);
 
     if ($actually_write_fg) {
-        # TODO
-        say 'cannot write a file yet';
-        # compress as a zip
-        # save in .git/objects/6e/245b9cd18643f5b2b38852a8320d7b557d3f8e
+        # see: https://metacpan.org/pod/Compress::Zlib#COMPRESS/UNCOMPRESS
+        # the two functions(compress & uncompress) defined above are not compatible with the Unix commands of the same name.
+        my $compressed = Compress::Zlib::compress($result);
+        die 'cannot compress the content' unless $compressed;
+
+        my $path = repo_file(
+            $actually_write_fg,
+            $object->repo,
+            'objects',
+            substr($digest, 0, 2),
+            substr($digest, 2),
+        );
+
+        # compress with zlib
+        # e.g. save in .git/objects/6e/245b9cd18643f5b2b38852a8320d7b557d3f8e
+        WYAG::Resource::File->write($path, $compressed);
     }
 
     return $digest;
@@ -57,7 +70,11 @@ sub object_read {
 
     my $path = repo_file(0, $repo, 'objects', substr($sha1, 0, 2), substr($sha1, 2));
     my $compressed = WYAG::Resource::File->read($path);
+
+    # see: https://metacpan.org/pod/Compress::Zlib#COMPRESS/UNCOMPRESS
+    # the two functions(compress & uncompress) defined above are not compatible with the Unix commands of the same name.
     my $raw = Compress::Zlib::uncompress($compressed);
+    die 'cannot uncompress the content' unless $raw;
 
     my ($type, $size) = ($raw =~ /(^commit|tree|tag|blob) (\d+)\x00/);
     die "malformed object: bad length $sha1" unless $size == length($raw) - length($type) - length($size) - 2;
@@ -89,6 +106,7 @@ sub _build_object {
     die 'unreachable: invalid object type is detected.';
 }
 
+# XXX: NOT WORKS
 # Key-Value List with Message
 sub kvlm_parse {
     my ($class, $raw, $start, $dct) = @_;
@@ -166,15 +184,18 @@ sub repo_dir {
     my ($mkdir, $repo, @path) = @_;
     my $path = repo_path($repo, @path);
 
-    if (-d $path) {
-        return $path;
-    } else {
-        die "Not a directory: $path";
+    if (-e $path) {
+        if (-d $path) {
+            return $path;
+        } else {
+            die "Not a directory: $path";
+        }
     }
 
     if ($mkdir) {
-        mkdir $path
+        make_path($path)
             or die "cannot make dir $path: $!";
+        return $path;
     } else {
         return;
     }

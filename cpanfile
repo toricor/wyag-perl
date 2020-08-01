@@ -12,4 +12,5 @@ on develop => sub {
 
 on test => sub {
     requires 'Test::Spec';
+    requires 'Test::Mock::Guard';
 };
